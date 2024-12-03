@@ -16,23 +16,22 @@ bool
 valid_line(const std::vector<size_t> &copy) {
     int invalid = 0;
     int prev    = copy[0];
-    for (size_t i = 1; i < copy.size(); i++) {
+    for(size_t i = 1; i < copy.size(); i++) {
         int next = copy[i];
         int diff = next - prev;
         if(diff < 0 || diff == 0 || diff > 3) {
             invalid++;
             break;
         }
-        prev = next; 
+        prev = next;
     }
     return (invalid == 0);
 }
 
-
 size_t
 solve(const std::vector<std::vector<size_t>> &matrix, bool isSecondPart) {
     size_t safe = 0;
-    for (const auto &line: matrix) {
+    for(const auto &line : matrix) {
         std::vector<size_t> copy = line;
         if(line.front() > line.back()) {
             std::reverse(copy.begin(), copy.end());    // always use ascendent vectors
@@ -41,7 +40,7 @@ solve(const std::vector<std::vector<size_t>> &matrix, bool isSecondPart) {
         if(valid_line(copy)) {
             safe++;
         } else if(isSecondPart) {
-            for (size_t i = 0; i < copy.size(); i++) {
+            for(size_t i = 0; i < copy.size(); i++) {
                 std::vector<size_t> modif = copy;
                 modif.erase(modif.begin() + i);
                 if(valid_line(modif)) {
@@ -50,17 +49,15 @@ solve(const std::vector<std::vector<size_t>> &matrix, bool isSecondPart) {
                 }
             }
         }
-    }   
-    
+    }
+
     return safe;
 }
-
 
 size_t
 part1(const std::vector<std::vector<size_t>> &matrix) {
     return solve(matrix, false);
 }
-
 
 size_t
 part2(const std::vector<std::vector<size_t>> &matrix) {
@@ -76,9 +73,9 @@ main(int argc, char **argv) {
     std::string              content(fileContent.begin(), fileContent.end());
     std::vector<std::string> lines = StringUtil::split(content, "\n");
 
-    Tokenizer tokenizer;
+    Tokenizer                        tokenizer;
     std::vector<std::vector<size_t>> matrix;
-    for (const std::string &line : lines) {
+    for(const std::string &line : lines) {
         tokenizer.set(line);
         matrix.push_back(tokenizer.consumeIntegerList());
     }
