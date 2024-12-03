@@ -13,7 +13,7 @@ using namespace cam::util;
 using namespace cam::parser;
 
 bool
-valid_line(const std::vector<size_t> &copy) {
+valid_line(const std::vector<int32_t> &copy) {
     int invalid = 0;
     int prev    = copy[0];
     for(size_t i = 1; i < copy.size(); i++) {
@@ -28,11 +28,11 @@ valid_line(const std::vector<size_t> &copy) {
     return (invalid == 0);
 }
 
-size_t
-solve(const std::vector<std::vector<size_t>> &matrix, bool isSecondPart) {
-    size_t safe = 0;
+int32_t
+solve(const std::vector<std::vector<int32_t>> &matrix, bool isSecondPart) {
+    int32_t safe = 0;
     for(const auto &line : matrix) {
-        std::vector<size_t> copy = line;
+        std::vector<int32_t> copy = line;
         if(line.front() > line.back()) {
             std::reverse(copy.begin(), copy.end());    // always use ascendent vectors
         }
@@ -41,7 +41,7 @@ solve(const std::vector<std::vector<size_t>> &matrix, bool isSecondPart) {
             safe++;
         } else if(isSecondPart) {
             for(size_t i = 0; i < copy.size(); i++) {
-                std::vector<size_t> modif = copy;
+                std::vector<int32_t> modif = copy;
                 modif.erase(modif.begin() + i);
                 if(valid_line(modif)) {
                     safe++;
@@ -54,13 +54,13 @@ solve(const std::vector<std::vector<size_t>> &matrix, bool isSecondPart) {
     return safe;
 }
 
-size_t
-part1(const std::vector<std::vector<size_t>> &matrix) {
+int32_t
+part1(const std::vector<std::vector<int32_t>> &matrix) {
     return solve(matrix, false);
 }
 
-size_t
-part2(const std::vector<std::vector<size_t>> &matrix) {
+int32_t
+part2(const std::vector<std::vector<int32_t>> &matrix) {
     return solve(matrix, true);
 }
 
@@ -73,18 +73,18 @@ main(int argc, char **argv) {
     std::string              content(fileContent.begin(), fileContent.end());
     std::vector<std::string> lines = StringUtil::split(content, "\n");
 
-    Tokenizer                        tokenizer;
-    std::vector<std::vector<size_t>> matrix;
+    Tokenizer                         tokenizer;
+    std::vector<std::vector<int32_t>> matrix;
     for(const std::string &line : lines) {
         tokenizer.set(line);
         matrix.push_back(tokenizer.consumeIntegerList());
     }
 
-    size_t p1 = part1(matrix);
-    printf(" Part 1 total:  %lu\n", p1);
+    int32_t p1 = part1(matrix);
+    printf(" Part 1 total:  %d\n", p1);
 
-    size_t p2 = part2(matrix);
-    printf(" Part 2 total:  %lu\n", p2);
+    int32_t p2 = part2(matrix);
+    printf(" Part 2 total:  %d\n", p2);
 
     return 0;
 }
