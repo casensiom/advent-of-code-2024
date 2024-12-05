@@ -20,7 +20,10 @@ part2(const std::vector<std::string> &lines) {
 
 int
 main(int argc, char **argv) {
-    std::vector<uint8_t>     fileContent = FileUtil::fileRead("assets/test01.txt");
+    std::string prg   = argv[0];
+    std::string asset = FileUtil::pathRemoveComponents(prg, -1) + "/assets/input01.txt";
+
+    std::vector<uint8_t>     fileContent = FileUtil::fileRead(asset);
     std::string              content(fileContent.begin(), fileContent.end());
     std::vector<std::string> lines = StringUtil::split(content, "\n");
 
