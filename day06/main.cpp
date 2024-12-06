@@ -58,7 +58,7 @@ advance(std::vector<std::string> &lines, Guard &guard) {
     guard.x += p.x;
     guard.y += p.y;
 
-    if(lines[guard.y][guard.x] == '#') {
+    if(inside(lines, guard) && lines[guard.y][guard.x] == '#') {
         guard.x -= p.x;
         guard.y -= p.y;
         guard.dir = (guard.dir + 1) % 4;
@@ -74,15 +74,16 @@ check_projection(const std::vector<std::string> &lines, Guard copy) {
     auto  p  = dirs[copy.dir];
     cp.x += p.x;
     cp.y += p.y;
-    if(!inside(lines, cp)) {
+    if(!inside(lines, cp) || lines[cp.y][cp.x] == '#') {
         return false;
     }
 
     copy.dir = (copy.dir + 1) % 4;
+    p  = dirs[copy.dir];
     while(inside(lines, copy) && lines[copy.y][copy.x] != '#') {
         copy.x += p.x;
         copy.y += p.y;
-        if(lines[copy.y][copy.x] == chrs[copy.dir]) {
+        if(inside(lines, copy) && lines[copy.y][copy.x] == chrs[copy.dir]) {
             return true;
         }
     }
@@ -99,7 +100,7 @@ part1(std::vector<std::string> lines) {
         if(lines[guard.y][guard.x] == '.') {
             ret++;
         }
-        lines[guard.y][guard.x] = 'X';    // mark
+        lines[guard.y][guard.x] = chrs[guard.dir];    // mark
         advance(lines, guard);
     }
 
@@ -112,7 +113,7 @@ part2(std::vector<std::string> lines) {
 
     size_t ret = 0;
     while(inside(lines, guard)) {
-        if(lines[guard.y][guard.x] == '.' && check_projection(lines, guard)) {
+        if(check_projection(lines, guard)) {
             ret++;
         }
         lines[guard.y][guard.x] = chrs[guard.dir];    // mark
@@ -125,7 +126,7 @@ part2(std::vector<std::string> lines) {
 int
 main(int argc, char **argv) {
     std::string prg   = argv[0];
-    std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/test01.txt";
+    std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/input01.txt";
 
     std::vector<uint8_t> fileContent = FileUtil::fileRead(asset);
     std::string          content(fileContent.begin(), fileContent.end());
