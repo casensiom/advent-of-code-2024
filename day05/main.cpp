@@ -9,6 +9,7 @@
 #include <map>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 using namespace cam::util;
 using namespace cam::parser;
@@ -68,7 +69,7 @@ solve(std::vector<int32_t> line, const Input &inputs, bool isPart2) {
             continue;
         }
 
-        auto rules = inputs.rules.at(key);
+        std::vector<int32_t> rules = inputs.rules.at(key);
         for(size_t j = 0; j < i; j++) {
             int32_t current = line[j];
             if(std::find(rules.begin(), rules.end(), current) != rules.end()) {

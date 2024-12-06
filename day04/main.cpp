@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string>
+#include <array>
 #include <vector>
 #include <iostream>
 
