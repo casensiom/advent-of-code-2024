@@ -133,18 +133,22 @@ part2(const Tokenizer &tokenizer) {
 int
 main(int argc, char **argv) {
     std::string prg   = argv[0];
-    std::string asset = FileUtil::pathRemoveComponents(prg, -1) + "/assets/input01.txt";
+    std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/input01.txt";
 
     std::vector<uint8_t> fileContent = FileUtil::fileRead(asset);
     std::string          content(fileContent.begin(), fileContent.end());
+    if(content.empty()) {
+        std::cerr << "[ERROR] Invalid input file: " << asset << std::endl;
+        return -1;
+    }
 
     Tokenizer tokenizer(content);
 
     size_t p1 = part1(tokenizer);
-    printf(" Part 1 total:  %lu\n", p1);
+    std::cout << "Part 1 total: " << p1 << std::endl;
 
     size_t p2 = part2(tokenizer);
-    printf(" Part 2 total:  %lu\n", p2);
+    std::cout << "Part 2 total: " << p2 << std::endl;
 
     return 0;
 }

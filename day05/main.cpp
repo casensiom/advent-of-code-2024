@@ -121,7 +121,7 @@ main(int argc, char **argv) {
     std::vector<uint8_t> fileContent = FileUtil::fileRead(asset);
     std::string          content(fileContent.begin(), fileContent.end());
     if(content.empty()) {
-        std::cout << "[ERROR] Invalid input file: " << asset << std::endl;
+        std::cerr << "[ERROR] Invalid input file: " << asset << std::endl;
         return -1;
     }
 

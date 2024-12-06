@@ -46,7 +46,6 @@ count_all(const std::vector<std::string> &lines, int32_t x, int32_t y) {
             int32_t ny = y + dirs[d][1] * pos;
             found[d] &= (nx >= 0 && nx < w && ny >= 0 && ny < h && lines[ny][nx] == pattern[pos]);
             if(!found[d]) {
-                // std::cout << "discard (" << x << ", " << y << ") (" << names[d] << ")" << std::endl;
                 break;
             }
         }
@@ -55,7 +54,6 @@ count_all(const std::vector<std::string> &lines, int32_t x, int32_t y) {
     size_t count = 0;
     for(int32_t pos = 0; pos < found.size(); pos++) {
         if(found[pos]) {
-            // std::cout << "x: " << x << ", y: " << y << " (" << names[pos] << ")" << std::endl;
             count++;
         }
     }
@@ -119,15 +117,20 @@ main(int argc, char **argv) {
     std::string prg   = argv[0];
     std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/input01.txt";
 
-    std::vector<uint8_t>     fileContent = FileUtil::fileRead(asset);
-    std::string              content(fileContent.begin(), fileContent.end());
+    std::vector<uint8_t> fileContent = FileUtil::fileRead(asset);
+    std::string          content(fileContent.begin(), fileContent.end());
+    if(content.empty()) {
+        std::cerr << "[ERROR] Invalid input file: " << asset << std::endl;
+        return -1;
+    }
+
     std::vector<std::string> lines = StringUtil::split(content, "\n");
 
     size_t p1 = part1(lines);
-    printf(" Part 1 total:  %lu\n", p1);
+    std::cout << "Part 1 total: " << p1 << std::endl;
 
     size_t p2 = part2(lines);
-    printf(" Part 2 total:  %lu\n", p2);
+    std::cout << "Part 2 total: " << p2 << std::endl;
 
     return 0;
 }

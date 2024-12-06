@@ -67,10 +67,15 @@ part2(const std::vector<std::vector<int32_t>> &matrix) {
 int
 main(int argc, char **argv) {
     std::string prg   = argv[0];
-    std::string asset = FileUtil::pathRemoveComponents(prg, -1) + "/assets/input01.txt";
+    std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/input01.txt";
 
-    std::vector<uint8_t>     fileContent = FileUtil::fileRead(asset);
-    std::string              content(fileContent.begin(), fileContent.end());
+    std::vector<uint8_t> fileContent = FileUtil::fileRead(asset);
+    std::string          content(fileContent.begin(), fileContent.end());
+    if(content.empty()) {
+        std::cerr << "[ERROR] Invalid input file: " << asset << std::endl;
+        return -1;
+    }
+
     std::vector<std::string> lines = StringUtil::split(content, "\n");
 
     Tokenizer                         tokenizer;
@@ -81,10 +86,10 @@ main(int argc, char **argv) {
     }
 
     int32_t p1 = part1(matrix);
-    printf(" Part 1 total:  %d\n", p1);
+    std::cout << "Part 1 total: " << p1 << std::endl;
 
     int32_t p2 = part2(matrix);
-    printf(" Part 2 total:  %d\n", p2);
+    std::cout << "Part 2 total: " << p2 << std::endl;
 
     return 0;
 }
