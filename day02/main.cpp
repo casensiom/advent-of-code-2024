@@ -13,7 +13,7 @@ using namespace cam::util;
 using namespace cam::parser;
 
 bool
-valid_line(const std::vector<int32_t> &copy) {
+valid_line(const std::vector<int64_t> &copy) {
     int invalid = 0;
     int prev    = copy[0];
     for(size_t i = 1; i < copy.size(); i++) {
@@ -29,10 +29,10 @@ valid_line(const std::vector<int32_t> &copy) {
 }
 
 int32_t
-solve(const std::vector<std::vector<int32_t>> &matrix, bool isSecondPart) {
+solve(const std::vector<std::vector<int64_t>> &matrix, bool isSecondPart) {
     int32_t safe = 0;
     for(const auto &line : matrix) {
-        std::vector<int32_t> copy = line;
+        std::vector<int64_t> copy = line;
         if(line.front() > line.back()) {
             std::reverse(copy.begin(), copy.end());    // always use ascendent vectors
         }
@@ -41,7 +41,7 @@ solve(const std::vector<std::vector<int32_t>> &matrix, bool isSecondPart) {
             safe++;
         } else if(isSecondPart) {
             for(size_t i = 0; i < copy.size(); i++) {
-                std::vector<int32_t> modif = copy;
+                std::vector<int64_t> modif = copy;
                 modif.erase(modif.begin() + i);
                 if(valid_line(modif)) {
                     safe++;
@@ -55,12 +55,12 @@ solve(const std::vector<std::vector<int32_t>> &matrix, bool isSecondPart) {
 }
 
 int32_t
-part1(const std::vector<std::vector<int32_t>> &matrix) {
+part1(const std::vector<std::vector<int64_t>> &matrix) {
     return solve(matrix, false);
 }
 
 int32_t
-part2(const std::vector<std::vector<int32_t>> &matrix) {
+part2(const std::vector<std::vector<int64_t>> &matrix) {
     return solve(matrix, true);
 }
 
@@ -79,7 +79,7 @@ main(int argc, char **argv) {
     std::vector<std::string> lines = StringUtil::split(content, "\n");
 
     Tokenizer                         tokenizer;
-    std::vector<std::vector<int32_t>> matrix;
+    std::vector<std::vector<int64_t>> matrix;
     for(const std::string &line : lines) {
         tokenizer.set(line);
         matrix.push_back(tokenizer.consumeIntegerList());

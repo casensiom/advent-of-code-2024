@@ -20,8 +20,8 @@ struct Rule {
 };
 
 struct Input {
-    std::map<int32_t, std::vector<int32_t>> rules;
-    std::vector<std::vector<int32_t>>       data;
+    std::map<int64_t, std::vector<int64_t>> rules;
+    std::vector<std::vector<int64_t>>       data;
 };
 
 Input
@@ -57,7 +57,7 @@ parseInput(const std::string &content) {
 }
 
 size_t
-solve(std::vector<int32_t> line, const Input &inputs, bool isPart2) {
+solve(std::vector<int64_t> line, const Input &inputs, bool isPart2) {
     size_t ret     = 0;
     bool   matches = true;
     bool   fixed   = false;
@@ -69,7 +69,7 @@ solve(std::vector<int32_t> line, const Input &inputs, bool isPart2) {
             continue;
         }
 
-        std::vector<int32_t> rules = inputs.rules.at(key);
+        std::vector<int64_t> rules = inputs.rules.at(key);
         for(size_t j = 0; j < i; j++) {
             int32_t current = line[j];
             if(std::find(rules.begin(), rules.end(), current) != rules.end()) {
