@@ -11,80 +11,119 @@
 using namespace cam::util;
 using namespace cam::parser;
 
-size_t
-solve(const std::string &line, bool isPart2) {
-    size_t ret = 0;
+int32_t
+get_span(const std::vector<int32_t> &disk, int32_t limit, int32_t len) {
+    int32_t pos = -1;
 
-    // abababababab
-    // ^          ^
-    // left       right
-
-    std::cout << line << std::endl;
-
-    size_t maxId    = std::ceil(line.size() / 2);
-    size_t skipLast = (line.size() % 2) == 0;
-
-    size_t left  = 0;
-    size_t right = line.size() - (((line.size() % 2) == 0) ? 2 : 1);
-
-    size_t index     = 0;
-    size_t currentId = 0;
-    size_t lastId    = maxId;
-    size_t count2    = 0;
-    while(left <= (right + 1)) {
-        // consume a valid value
-        size_t count = line[left++] - '0';
-        for(size_t i = 0; i < count; i++) {
-            ret += index * currentId;
-            std::cout << currentId << " ";
-            index++;
+    int32_t idxLeft = 0;
+    do {
+        while(disk[idxLeft] != -1) {
+            idxLeft++;
         }
-        currentId++;
+        int32_t lLen = 0;
+        while(disk[idxLeft + lLen] == -1) {
+            lLen++;
+        }
+        if(lLen >= len && idxLeft < limit) {
+            pos = idxLeft;
+            break;
+        } else {
+            idxLeft += lLen;
+        }
+    } while(idxLeft < limit);
+    return pos;
+}
 
-        // consume a valid space
-        size_t spaces = line[left++] - '0';
-        if(spaces == 0) {
+std::vector<int32_t>
+get_disk(const std::string &line) {
+    std::vector<int32_t> disk;
+    int32_t              even = true;
+    int32_t              id   = 0;
+    for(unsigned char c : line) {
+        int32_t len = c - '0';
+        int32_t val = (even ? id : -1);
+        for(size_t i = 0; i < len; i++) {
+            disk.push_back(val);
+        }
+        id += (even ? 1 : 0);
+        even = !even;
+    }
+    return disk;
+}
+
+size_t
+score(const std::vector<int32_t> &disk) {
+    size_t ret = 0;
+    for(size_t i = 0; i < disk.size(); i++) {
+        if(disk[i] == -1) {
             continue;
         }
-
-        // consume a compressed value until it ends or run out of space
-        do {
-            if(count2 == 0) {
-                count2 = line[right] - '0';
-                right -= 2;
-            }
-            while(count2 > 0 && spaces > 0) {
-                ret += index * lastId;
-                std::cout << lastId << " ";
-                count2--;
-                spaces--;
-                index++;
-            }
-            if(count2 == 0) {
-                lastId--;
-            }
-        } while(spaces > 0);
+        ret += i * disk[i];
     }
-
-    while(count2 > 0) {
-        ret += index * lastId;
-        std::cout << lastId << " ";
-        count2--;
-        index++;
-    }
-
-    std::cout << std::endl;
     return ret;
 }
 
 size_t
+solve(const std::string &line) {
+    std::vector<int32_t> disk = get_disk(line);
+
+    int32_t idxLeft  = 0;
+    int32_t idxRight = disk.size() - 1;
+    while(idxLeft < idxRight) {
+        while(disk[idxLeft] != -1) {
+            idxLeft++;
+        }
+        while(disk[idxRight] == -1) {
+            idxRight--;
+        }
+
+        disk[idxLeft]  = disk[idxRight];
+        disk[idxRight] = -1;
+
+        idxLeft++;
+        idxRight--;
+    }
+
+    return score(disk);
+}
+
+size_t
+solve2(const std::string &line) {
+    std::vector<int32_t> disk = get_disk(line);
+
+    int32_t idxLeft  = 0;
+    int32_t idxRight = disk.size() - 1;
+    while(idxLeft < idxRight) {
+        while(disk[idxRight] == -1) {
+            idxRight--;
+        }
+        int32_t val  = disk[idxRight];
+        int32_t rLen = 0;
+        while(disk[idxRight - rLen] == val) {
+            rLen++;
+        }
+
+        int32_t pos = get_span(disk, idxRight, rLen);
+        if(pos != -1) {
+            for(size_t i = 0; i < rLen; i++) {
+                disk[pos + i]      = val;
+                disk[idxRight - i] = -1;
+            }
+        }
+        idxRight -= rLen;
+    }
+
+    return score(disk);
+}
+
+size_t
 part1(const std::string &line) {
-    return solve(line, false);
+    return solve(line);
 }
 
 size_t
 part2(const std::string &line) {
-    return 0;
+    return solve2(line);
 }
 
 int
@@ -101,7 +140,6 @@ main(int argc, char **argv) {
 
     size_t p1 = part1(content);
     std::cout << "Part 1 total: " << p1 << std::endl;
-    // too high 6284186731475
 
     size_t p2 = part2(content);
     std::cout << "Part 2 total: " << p2 << std::endl;
