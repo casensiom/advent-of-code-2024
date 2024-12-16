@@ -11,9 +11,26 @@
 using namespace cam::util;
 using namespace cam::parser;
 
+constexpr int EMPTY = 0x0;
+constexpr int UP    = 0x1;
+constexpr int RIGHT = 0x2;
+constexpr int DOWN  = 0x4;
+constexpr int LEFT  = 0x8;
+constexpr int BLOCK = 0xF;
+
 struct v2 {
     int32_t x = 0;
     int32_t y = 0;
+
+    v2() {
+    }
+    v2(int32_t x_, int32_t y_) : x(x_), y(y_) {
+    }
+
+    bool
+    operator==(const v2 &other) const {
+        return x == other.x && y == other.y;
+    }
 };
 
 static std::vector<v2> dirs = {
@@ -59,13 +76,13 @@ struct Matrix {
             for(size_t x = 0; x < Width(); x++) {
                 if(x == x_ && y == y_) {
                     std::cout << "O";
-                } else if(data[y][x] == 0x90) {
+                } else if(data[y][x] == BLOCK) {
                     std::cout << "#";
-                } else if(data[y][x] == 0) {
+                } else if(data[y][x] == EMPTY) {
                     std::cout << " ";
-                } else if(data[y][x] == 1 || data[y][x] == 4) {
+                } else if(data[y][x] == UP || data[y][x] == DOWN) {
                     std::cout << "|";
-                } else if(data[y][x] == 2 || data[y][x] == 8) {
+                } else if(data[y][x] == RIGHT || data[y][x] == LEFT) {
                     std::cout << "-";
                 } else {
                     std::cout << "+";
@@ -83,6 +100,14 @@ struct Guard {
 
     Guard() = default;
     Guard(int32_t x, int32_t y, size_t dir) : x(x), y(y), dir(dir) {
+    }
+
+    v2
+    Position() const {
+        v2 pos;
+        pos.x = x;
+        pos.y = y;
+        return pos;
     }
 
     void
@@ -105,11 +130,19 @@ struct Guard {
     }
     bool
     Blocked(const Matrix &map) {
-        return Inside(map) && map.Check(x, y, 0x90);
+        return Inside(map) && map.Check(x, y, BLOCK);
     }
     void
     Turn() {
         dir = (dir + 1) % 4;
+    }
+
+    bool
+    Peek(const Matrix &map) {
+        Forward();
+        bool ret = (Inside(map) && !Blocked(map));
+        Backward();
+        return ret;
     }
 };
 
@@ -122,9 +155,13 @@ struct State {
         return guard.Inside(map);
     }
 
+    bool
+    Visited() {
+        return map.CheckBit(guard.x, guard.y, (1 << guard.dir));
+    }
+
     void
     Step() {
-        // map.data[guard.y][guard.x] |= (1 << guard.dir);    // mark
         map.Set(guard.x, guard.y, (1 << guard.dir));
         guard.Forward();
         if(guard.Blocked(map)) {
@@ -140,16 +177,15 @@ get_position(std::vector<std::string> &lines) {
 
     for(size_t y = 0; y < lines.size(); y++) {
         std::vector<uint32_t> row;
-        //(lines[y].size(), 0);
         for(size_t x = 0; x < lines[y].size(); x++) {
-            row.push_back((lines[y][x] == '#') ? 0x90 : 0);
+            row.push_back((lines[y][x] == '#') ? BLOCK : EMPTY);
             if(lines[y][x] == '^') {
                 ret.guard = Guard(x, y, 0);
             }
             if(lines[y][x] == '#') {
-                lines[y][x] = 0x90;
+                lines[y][x] = BLOCK;
             } else {
-                lines[y][x] = 0;
+                lines[y][x] = EMPTY;
             }
         }
         ret.map.data.push_back(row);
@@ -158,44 +194,13 @@ get_position(std::vector<std::string> &lines) {
     return ret;
 }
 
-bool
-check_stepped(const State &state) {
-    return state.map.Check(state.guard.x, state.guard.y, 0);
-}
-
-bool
-check_simulation(const State &state) {
-    Guard cp = state.guard;
-    cp.Forward();
-    if(!cp.Inside(state.map) || cp.Blocked(state.map)) {
-        return false;
-    }
-
-    State copy = state;
-    copy.guard.Turn();
-    while(copy.Valid()) {
-        copy.Step();
-        if(copy.guard.Inside(copy.map) && copy.map.CheckBit(copy.guard.x, copy.guard.y, (1 << copy.guard.dir))) {
-            // if (cp.x == 60) {
-
-            //     std::cout << "Loop: " << cp.x << ", " << cp.y << std::endl;
-            // }
-            // copy.map.Dump(cp.x, cp.y);
-            // exit(-1);
-            return true;
-        }
-    }
-
-    return false;
-}
-
 size_t
-solve(std::vector<std::string> lines, bool isPart2) {
+solve(std::vector<std::string> lines) {
     State state = get_position(lines);
 
     size_t ret = 0;
     while(state.Valid()) {
-        if((!isPart2 && check_stepped(state)) || (isPart2 && check_simulation(state))) {
+        if(state.map.Check(state.guard.x, state.guard.y, EMPTY)) {
             ret++;
         }
         state.Step();
@@ -205,13 +210,31 @@ solve(std::vector<std::string> lines, bool isPart2) {
 }
 
 size_t
-part1(std::vector<std::string> lines) {
-    return solve(lines, false);
-}
+solve2(std::vector<std::string> lines) {
+    size_t ret    = 0;
+    size_t height = lines.size();
+    size_t width  = lines[0].size();
+    State  orig   = get_position(lines);
 
-size_t
-part2(std::vector<std::string> lines) {
-    return solve(lines, true);
+    for(size_t y = 0; y < height; y++) {
+        for(size_t x = 0; x < width; x++) {
+            State state = orig;
+            if(state.map.Check(x, y, BLOCK) || v2(x, y) == state.guard.Position()) {
+                continue;
+            }
+            state.map.data[y][x] = BLOCK;
+
+            while(state.Valid()) {
+                if(state.Visited()) {
+                    ret++;
+                    break;
+                }
+                state.Step();
+            }
+        }
+    }
+
+    return ret;
 }
 
 int
@@ -228,15 +251,11 @@ main(int argc, char **argv) {
 
     std::vector<std::string> map = StringUtil::split(content, "\n");
 
-    size_t p1 = part1(map);
+    size_t p1 = solve(map);
     std::cout << "Part 1 total: " << p1 << std::endl;
 
-    size_t p2 = part2(map);
+    size_t p2 = solve2(map);
     std::cout << "Part 2 total: " << p2 << std::endl;
-    // low 374
-    // low 425
-    // low 1000
-    // invalid 1423
 
     return 0;
 }
