@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <cmath>
 
 using namespace cam::util;
 using namespace cam::parser;
@@ -33,7 +34,7 @@ int_len(int64_t val) {
 spplited
 int_split(int64_t val) {
     size_t len       = int_len(val);
-    size_t magnitude = pow(10, len / 2);
+    size_t magnitude = std::pow(10, len / 2);
 
     int64_t high = val / magnitude;
     int64_t low  = val % magnitude;
