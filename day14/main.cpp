@@ -1,6 +1,7 @@
 #include <util/StringUtil.hpp>
 #include <util/FileUtil.hpp>
 #include <parser/Tokenizer.hpp>
+#include <math/Vector2.hpp>
 
 #include <stdio.h>
 #include <ctype.h>
@@ -13,43 +14,17 @@
 
 using namespace cam::util;
 using namespace cam::parser;
-
-struct v2 {
-    int64_t x = 0;
-    int64_t y = 0;
-
-    v2() {
-    }
-    v2(int32_t x_, int32_t y_) : x(x_), y(y_) {
-    }
-
-    bool
-    operator==(const v2 &other) const {
-        return x == other.x && y == other.y;
-    }
-};
-
-struct rect {
-    v2 pos;
-    v2 size;
-
-    rect() {
-    }
-    rect(int64_t x, int64_t y, int64_t width, int64_t height) : pos(x, y), size(width, height) {
-    }
-
-};
+using namespace cam::math;
 
 struct robot {
-    v2 pos;
-    v2 dir;
+    Vector2i pos;
+    Vector2i dir;
 };
 
-
-std::vector<robot> 
+std::vector<robot>
 parse(const std::string &content) {
     std::vector<robot> robots;
-    Tokenizer tkn(content);
+    Tokenizer          tkn(content);
     while(!tkn.eof()) {
         robot r;
         if(tkn.peek() != 'p') {
@@ -57,43 +32,45 @@ parse(const std::string &content) {
             break;
         }
         tkn.consume(2);
-        r.pos.x = tkn.consumeInteger();
+        int pX = tkn.consumeInteger();
         tkn.consume(1);
-        r.pos.y = tkn.consumeInteger();
+        int pY = tkn.consumeInteger();
         tkn.consume(3);
-        r.dir.x = tkn.consumeInteger();
+        int dX = tkn.consumeInteger();
         tkn.consume(1);
-        r.dir.y = tkn.consumeInteger();
+        int dY = tkn.consumeInteger();
         tkn.consume(1);
+        r.pos.set(pX, pY);
+        r.dir.set(dX, dY);
         robots.push_back(r);
     }
     return robots;
 }
 
-int64_t mod(int64_t a, int64_t m) {
+int64_t
+mod(int64_t a, int64_t m) {
     int64_t ret = (a % m + m) % m;    // positive module
-    return ret; 
+    return ret;
 }
 
 size_t
 solve(const std::vector<robot> &robots) {
-    size_t ret = 0;
-    int64_t width = 11;
+    size_t  ret    = 0;
+    int64_t width  = 11;
     int64_t height = 7;
     if(robots.size() > 12) {
-        width = 101;
+        width  = 101;
         height = 103;
     }
-    int64_t steps = 100;
+    int64_t steps  = 100;
     int64_t quadr1 = 0;
     int64_t quadr2 = 0;
     int64_t quadr3 = 0;
     int64_t quadr4 = 0;
 
-    
-    for (const auto &r : robots) {
-        int64_t x = mod((r.pos.x + r.dir.x * steps) , width);
-        int64_t y = mod((r.pos.y + r.dir.y * steps) , height);
+    for(const auto &r : robots) {
+        int64_t x = mod((r.pos.getX() + r.dir.getX() * steps), width);
+        int64_t y = mod((r.pos.getY() + r.dir.getY() * steps), height);
         if(x < width / 2 && y < height / 2) {
             quadr1++;
         } else if(x < width / 2 && y > height / 2) {
@@ -108,89 +85,69 @@ solve(const std::vector<robot> &robots) {
     std::cout << "q2: " << quadr2 << std::endl;
     std::cout << "q3: " << quadr3 << std::endl;
     std::cout << "q4: " << quadr4 << std::endl;
-    
-    return (quadr1*quadr2*quadr3*quadr4);
+
+    return (quadr1 * quadr2 * quadr3 * quadr4);
 }
 
+void
+dump(std::vector<std::vector<int>> map, int val) {
+    size_t HEIGHT = map.size();
+    size_t WIDTH  = map[0].size();
 
-rect compute_area(const std::vector<v2>& elements) {
-    int64_t minX = std::numeric_limits<int64_t>::max();
-    int64_t maxX = std::numeric_limits<int64_t>::min();
-    int64_t minY = std::numeric_limits<int64_t>::max();
-    int64_t maxY = std::numeric_limits<int64_t>::min();
-    
-    for (const auto& e : elements) {
-        minX = std::min(minX, e.x);
-        maxX = std::max(maxX, e.x);
-        minY = std::min(minY, e.y);
-        maxY = std::max(maxY, e.y);
-    }
-    return rect(minX, minY, maxX - minX, maxY - minY);
-}
-
-// Calcula el área del rectángulo mínimo que contiene todos los puntos
-int calculateArea(const std::vector<v2>& elements) {
-    rect r = compute_area(elements);
-    return (r.size.x + 1) * (r.size.y + 1);
-}
-
-void dump(const std::vector<v2>& elements) {
-    rect r = compute_area(elements);
-    std::vector<std::vector<char>> grid(r.size.y + 1, std::vector<char>(r.size.x + 1, '.'));
-    for (const auto& e : elements) {
-        grid[e.y - r.pos.y][e.x - r.pos.x] = '#';
-    }
-    
-    for (const auto& row : grid) {
-        for (char c : row) {
-            std::cout << c;
+    std::cout << std::endl;
+    for(size_t y = 0; y < HEIGHT; y++) {
+        for(size_t x = 0; x < WIDTH; x++) {
+            std::cout << ((map[y][x] == val) ? "#" : ".");
         }
-        std::cout << "\n";
+        std::cout << std::endl;
     }
+    std::cout << std::endl;
 }
 
 size_t
 solve2(const std::vector<robot> &robots) {
-    size_t ret = 0;
-    int64_t width = 11;
+    size_t  ret    = 0;
+    int64_t width  = 11;
     int64_t height = 7;
     if(robots.size() > 12) {
-        width = 101;
+        width  = 101;
         height = 103;
     }
 
-    // int64_t steps = 1000;
-    //for (size_t i = 0; i < steps; i++)
+    std::vector<robot> copy = robots;
 
-    size_t best = 0;
-    int minArea = std::numeric_limits<int>::max();
-    bool simetric = false;
-    size_t i = 0;
-    while(i < 100000)
-    {
+    size_t best     = 0;
+    int    minArea  = std::numeric_limits<int>::max();
+    bool   simetric = false;
+    size_t i        = 0;
+    while(i < 10000) {
         ++i;
 
-        std::vector<v2> pos;
-        for (const auto &r : robots) {
-            int64_t x = mod((r.pos.x + r.dir.x * i) , width);
-            int64_t y = mod((r.pos.y + r.dir.y * i) , height);
+        std::vector<std::vector<int>> map(height, std::vector<int>(width, 0));
+        for(auto &r : copy) {
+            int pX = mod((r.pos.getX() + r.dir.getX()), width);
+            int pY = mod((r.pos.getY() + r.dir.getY()), height);
+            r.pos.set(pX, pY);
 
-            if(std::find(pos.begin(), pos.end(), v2(x, y)) != pos.end()) {
-                continue;
+            map[r.pos.getY()][r.pos.getX()] = i;
+        }
+
+        for(size_t y = 0; y < height; y++) {
+            int line = 0;
+            for(size_t x = 0; x < width; x++) {
+                if(map[y][x] == i) {
+                    line++;
+                    if(line >= 10) {
+                        dump(map, i);
+                        return i;
+                    }
+                } else {
+                    line = 0;
+                }
             }
-            pos.emplace_back(x, y);
         }
-
-        int area = calculateArea(pos);
-        if(area < minArea) {
-            best = i;
-            minArea = area;
-            std::cout << "Time: " << i << ", Area: " << area << "\n";
-            dump(pos);
-        }
-
     }
-    
+
     return 0;
 }
 
