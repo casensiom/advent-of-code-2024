@@ -1,6 +1,7 @@
 #include <util/StringUtil.hpp>
 #include <util/FileUtil.hpp>
 #include <parser/Tokenizer.hpp>
+#include <math/MathUtil.hpp>
 
 #include <stdio.h>
 #include <ctype.h>
@@ -11,7 +12,7 @@
 
 using namespace cam::util;
 using namespace cam::parser;
-
+using namespace cam::math;
 
 struct v2 {
     int64_t x = 0;
@@ -36,11 +37,11 @@ struct Game {
 
 std::vector<Game>
 parse(const std::string &content) {
-    std::vector<Game> ret;
+    std::vector<Game>        ret;
     std::vector<std::string> groups = StringUtil::split(content, "\n\n");
     for(const std::string &g : groups) {
         Tokenizer tkn(g);
-        Game game;
+        Game      game;
         tkn.consume(12);
         game.a.x = tkn.consumeInteger();
         tkn.consume(4);
@@ -59,71 +60,52 @@ parse(const std::string &content) {
     return ret;
 }
 
-int64_t mod(int64_t a, int64_t m) {
-    //int64_t ret = (a % m + m) % m;    // positive module
-    int64_t ret = a % m;
-    std::cout << a << " mod " << m << " == " << ret << std::endl;
-
-    return ret; 
-}
-
 size_t
 solve(const std::vector<Game> &games, bool isPart2) {
     size_t ret = 0;
 
+    // Represent the system as matrix
+    // |x1 y1|  |A| _ |d1|
+    // |x2 y2|  |B| - |d2|
+
+    // X * M = D   -> X = M^-1 * D
+
+    // M^-1 =  1/det(M) * | y2 -y1|
+    //                    |-x2  y2|
+
+    // A = (y2*d1 - y1*d2) / det(M)
+    // A = (-x2*d1 + x1*d2) / det(M)
+
     for(const Game &g : games) {
-
-        // Button A: X+94, Y+34
-        // Button B: X+22, Y+67
-        // Prize: X=8400, Y=5400
-
-        // X1 * a.x + X2 * b.x = prize.x
-        // X1 * a.y + X2 * b.y = prize.y
-
-        // X2 = (prize.x - X1 * a.x) / b.x
-        // (X1 * a.y * b.x) - (X1 * a.x * b.y) = prize.y * b.x - (prize.x * b.y)
-        // X1 * (a.y * b.x - a.x * b.y) = prize.y * b.x - (prize.x * b.y)
-        // X1 = (prize.y * b.x - (prize.x * b.y)) / (a.y * b.x - a.x * b.y)
-        
-        std::cout << "---" << std::endl;
-        int det = (g.a.y * g.b.x - g.a.x * g.b.y);
-        if(det == 0) {
-            continue;
-        }
+        int64_t det = (g.a.x * g.b.y - g.b.x * g.a.y);
 
         v2 prize;
         prize.x = g.prize.x;
         prize.y = g.prize.y;
         if(isPart2) {
-            prize.x = mod(prize.x + 10000000000000L, std::lcm(g.a.x, g.b.x));
-            prize.y = mod(prize.y + 10000000000000L, std::lcm(g.a.y, g.b.y));
+            prize.x = prize.x + 10000000000000L;
+            prize.y = prize.y + 10000000000000L;
         }
 
-        int X1 = ((prize.y * g.b.x) - (prize.x * g.b.y)) / det;
-        int X2 = (prize.x - X1 * g.a.x) / g.b.x;
+        if(isNotZero(det)) {
+            int64_t A = (prize.x * g.b.y - g.b.x * prize.y) / det;
+            int64_t B = (g.a.x * prize.y - prize.x * g.a.y) / det;
 
-        std::cout << "X1 * " << g.a.x << " + X2 * " << g.b.x << " == " << prize.x << std::endl;
-        std::cout << "X1 * " << g.a.y << " + X2 * " << g.b.y << " == " << prize.y << std::endl;
-        std::cout << "  > " << X1 << " * " << g.a.x << " + " << X2 << " * " << g.b.x << " == " << prize.x << std::endl;
-        std::cout << "  > " << X1 << " * " << g.a.y << " + " << X2 << " * " << g.b.y << " == " << prize.y << std::endl;
+            if(A * g.a.x + B * g.b.x != prize.x || A * g.a.y + B * g.b.y != prize.y) {
+                continue;
+            }
+            if(!isPart2 && (A > 100 || B > 100)) {
+                continue;
+            }
 
-        if(X1 * g.a.x + X2 * g.b.x == prize.x && 
-            X1 * g.a.y + X2 * g.b.y == prize.y 
-            //&& X1 <= 100 && X2 <= 100
-            ) {
-            std::cout << X1 << " * " << g.a.x << " + " << X2 << " * " << g.b.x << " == " << prize.x << std::endl;
-            std::cout << X1 << " * " << g.a.y << " + " << X2 << " * " << g.b.y << " == " << prize.y << std::endl;
-
-            ret += X1 * 3 + X2;
+            ret += A * 3 + B;
         } else {
             std::cout << " Sin solucion." << std::endl;
         }
-    
     }
 
     return ret;
 }
-
 
 size_t
 part1(const std::vector<Game> &games) {
@@ -138,7 +120,7 @@ part2(const std::vector<Game> &games) {
 int
 main(int argc, char **argv) {
     std::string prg   = argv[0];
-    std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/test01.txt";
+    std::string asset = FileUtil::pathRemoveComponents(prg, 1) + "/assets/input01.txt";
 
     std::vector<uint8_t> fileContent = FileUtil::fileRead(asset);
     std::string          content(fileContent.begin(), fileContent.end());
