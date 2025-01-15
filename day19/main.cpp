@@ -13,45 +13,50 @@ using namespace cam::util;
 using namespace cam::parser;
 
 size_t
-solve(const std::vector<std::string> &keys, const std::string &target, const std::string &solution, std::vector<std::string> &visited) {
-    if(solution.size() >= target.size()) {
-        return 0;
+solve_recursive(const std::vector<std::string> &keys, const std::string &target, const std::string &solution,
+                std::map<std::string, size_t> &visited) {
+    if(solution == target) {
+        // std::cout << "found: " << solution << std::endl;
+        return 1;
+    }
+    if(visited.find(solution) != visited.end()) {
+        // std::cout << "retry: " << solution << std::endl;
+        return visited[solution];
     }
 
     size_t ret = 0;
     for(const auto &piece : keys) {
-        std::string next = solution + piece;
-        if(std::find(visited.begin(), visited.end(), next) != visited.end()) {
-            continue;
-        }
+        std::string next    = solution + piece;
+        size_t      partial = 0;
         if(StringUtil::starts(target, next)) {
-            visited.push_back(next);
             // std::cout << "trace: " << solution << " + " << piece << std::endl;
-            if(next == target) {
-                return 1;
-            } else {
-                ret += solve(keys, target, next, visited);
-            }
+            partial = solve_recursive(keys, target, next, visited);
         }
+        visited[next] = partial;
+        ret += partial;
     }
+    visited[solution] = ret;
     return ret;
 }
 
 size_t
-part1(const std::vector<std::string> &values, const std::vector<std::string> &targets) {
-    size_t ret = 0;
+solve(const std::vector<std::string> &values, const std::vector<std::string> &targets) {
+    size_t ret1 = 0;
+    size_t ret2 = 0;
 
     for(const auto t : targets) {
-        std::vector<std::string> visited;
-        ret += solve(values, t, "", visited);
-        std::cout << " > " << t << std::endl;
+        std::map<std::string, size_t> visited;
+        size_t                        v = solve_recursive(values, t, "", visited);
+        std::cout << " > " << t << " - " << v << std::endl;
+        if(v > 0) {
+            ret1++;
+        }
+        ret2 += v;
     }
-    return ret;
-}
+    std::cout << "Part 1 total: " << ret1 << std::endl;
+    std::cout << "Part 2 total: " << ret2 << std::endl;
 
-size_t
-part2(const std::vector<std::string> &lines) {
-    return 0;
+    return ret1;
 }
 
 int
@@ -73,12 +78,8 @@ main(int argc, char **argv) {
     std::vector<std::string> dict    = tkn.consumeStringList(", ");
     std::vector<std::string> targets = StringUtil::split(parts[1], "\n");
 
-    std::sort(dict.begin(), dict.end(), [](const std::string &a, const std::string &b) { return a.size() > b.size(); });
-    size_t p1 = part1(dict, targets);
-    std::cout << "Part 1 total: " << p1 << std::endl;
-
-    // size_t p2 = part2(lines);
-    // std::cout << "Part 2 total: " << p2 << std::endl;
+    std::sort(dict.begin(), dict.end(), [](const std::string &a, const std::string &b) { return a.size() < b.size(); });
+    solve(dict, targets);
 
     return 0;
 }
